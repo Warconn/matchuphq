@@ -907,6 +907,7 @@ async function boot(){
     PLAYERS={};
   }
   board.innerHTML='';
+  keepAwake();
   await refresh();
   clearInterval(TIMER);
   TIMER=setInterval(refresh,20000);
@@ -946,6 +947,20 @@ document.addEventListener('keydown',e=>{
   if(e.key==='r'||e.key==='R')refresh();
   if(e.key==='+'||e.key==='=')setScale(scale+.05);
   if(e.key==='-')setScale(scale-.05);
+});
+
+/* hold the screen on — TV boxes blank a page that never gets input */
+let WL=null;
+async function keepAwake(){
+  try{
+    if('wakeLock' in navigator && !WL){
+      WL=await navigator.wakeLock.request('screen');
+      WL.addEventListener('release',()=>{WL=null;});
+    }
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){keepAwake();refresh();}
 });
 
 let idle;
