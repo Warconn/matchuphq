@@ -312,7 +312,7 @@ kbd{background:var(--card);border:1px solid var(--line);padding:.05em .45em;bord
 </div>
 
 <script>
-const BUILD='2026-09-10.1';
+const BUILD='2026-09-10.2';
 console.log('Matchup HQ build '+BUILD);
 const SL='https://api.sleeper.app/v1';
 const ESPN='https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
@@ -743,6 +743,29 @@ function fitAll(){
 }
 window.addEventListener('resize',fitAll);
 document.addEventListener('fullscreenchange',fitAll);
+
+/* if a roster still doesn't fit after fit() has shrunk it as far as it
+   will go (heavy zoom, a big bench), gently scroll the column down and
+   back up so the rest of the team is visible over time instead of just
+   being cut off. Recomputed from a shared clock each tick, so it doesn't
+   care that refresh() rebuilds the .rows elements every 20s. */
+function easeInOut(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;}
+const AUTOSCROLL_HOLD=2200, AUTOSCROLL_MOVE=5000;
+const AUTOSCROLL_PERIOD=2*(AUTOSCROLL_HOLD+AUTOSCROLL_MOVE);
+function autoScrollTick(){
+  const t=performance.now();
+  document.querySelectorAll('#board .col .rows').forEach(rows=>{
+    const max=rows.scrollHeight-rows.clientHeight;
+    if(max<=2){rows.scrollTop=0;return;}
+    let p=t%AUTOSCROLL_PERIOD,frac;
+    if(p<AUTOSCROLL_HOLD)frac=0;
+    else if((p-=AUTOSCROLL_HOLD)<AUTOSCROLL_MOVE)frac=easeInOut(p/AUTOSCROLL_MOVE);
+    else if((p-=AUTOSCROLL_MOVE)<AUTOSCROLL_HOLD)frac=1;
+    else frac=1-easeInOut((p-AUTOSCROLL_HOLD)/AUTOSCROLL_MOVE);
+    rows.scrollTop=Math.round(frac*max);
+  });
+}
+setInterval(autoScrollTick,50);
 
 /* ---------------- refresh loop ---------------- */
 async function refresh(){
