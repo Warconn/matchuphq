@@ -116,7 +116,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .pos-FLEX span{color:#8FE3C0}
 .pos-SFLEX span{color:#FF9EC5}
 
-.p{display:grid;grid-template-columns:auto 1fr auto;align-items:center;
+.p{position:relative;overflow:hidden;display:grid;grid-template-columns:auto 1fr auto;align-items:center;
   gap:calc(.5rem * var(--rowf));padding:calc(.4rem * var(--rowf) * var(--boost)) calc(.6rem * var(--rowf));
   min-width:0;background:var(--card);border-radius:var(--r);border:1px solid transparent}
 .p.r{direction:rtl;text-align:right}
@@ -143,11 +143,34 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .dot{display:inline-block;width:.5em;height:.5em;border-radius:50%;background:var(--mine);
   margin-right:.35em;vertical-align:.05em;animation:pulse 1.8s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes wash{0%{opacity:.30}55%{opacity:.22}100%{opacity:0}}
+@keyframes pop{0%{transform:scale(1)}22%{transform:scale(1.14)}100%{transform:scale(1)}}
+@keyframes tint-up{0%,55%{color:var(--up)}100%{color:inherit}}
+@keyframes tint-down{0%,55%{color:var(--down)}100%{color:inherit}}
+.p.bump::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:var(--up);opacity:0;animation:wash 2.4s ease-out}
+.p.bump.down::after{background:var(--down)}
+.p.bump .pts{display:inline-block;transform-origin:center;animation:pop 2.4s ease-out,tint-up 2.4s ease-out}
+.p.r.bump .pts{transform-origin:center}
+.p.bump.down .pts{animation:pop 2.4s ease-out,tint-down 2.4s ease-out}
+.tot.bump{display:inline-block;animation:pop 2.4s ease-out,tint-up 2.4s ease-out}
+.tot.bump.down{animation:pop 2.4s ease-out,tint-down 2.4s ease-out}
+@media (prefers-reduced-motion:reduce){
+  .p.bump::after,.p.bump .pts,.tot.bump{animation:none}
+  .p.bump{outline:1px solid var(--up)}
+  .p.bump.down{outline-color:var(--down)}
+}
 @media (prefers-reduced-motion:reduce){.dot{animation:none}}
 
-.strip{flex:0 0 auto;background:var(--card);border-radius:var(--r);padding:.4rem .7rem .5rem;margin-bottom:.5rem}
-.strip h4{font-size:.82rem;font-weight:600;color:var(--dim);margin-bottom:.2rem}
-.strip .g2{display:grid;grid-template-columns:1fr 1fr;gap:0 1.2rem}
+.strip{flex:0 0 auto;background:var(--card);border-radius:var(--r);padding:.35rem .7rem .45rem;margin-bottom:.5rem}
+.strip-head{display:flex;width:100%;align-items:center;justify-content:space-between;gap:.5rem;
+  padding:.2rem 0;color:var(--dim);font-size:.88rem;font-weight:600}
+.strip-head:hover{color:var(--text)}
+.strip-head:focus-visible{outline:2px solid var(--mine);outline-offset:3px;border-radius:4px}
+.chev{display:inline-block;font-size:1.2rem;line-height:.6;transition:transform .18s ease}
+.strip.open .chev{transform:rotate(180deg)}
+.strip.open .strip-head{color:var(--muted)}
+.strip .g2{display:grid;grid-template-columns:1fr 1fr;gap:0 1.2rem;margin-top:.35rem}
 .mu{display:grid;grid-template-columns:1fr auto auto 1fr;gap:.5rem;align-items:baseline;
   font-size:.92rem;padding:.1rem 0;color:var(--muted)}
 .mu span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -160,33 +183,49 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 
 .setup{position:fixed;inset:0;background:var(--base);display:flex;align-items:center;
   justify-content:center;padding:1.5rem;z-index:20;overflow:auto}
-.card{width:min(560px,100%)}
-.card h1{font-size:2.3rem;font-weight:800;line-height:1.05;letter-spacing:-.02em}
-.card h1 em{font-style:normal;color:var(--mine)}
-.card p.lede{color:var(--muted);font-size:1.05rem;margin:.6rem 0 1.5rem;max-width:46ch;line-height:1.5}
-label{display:block;font-size:.95rem;color:var(--muted);margin-bottom:.35rem}
-input[type=text]{width:100%;padding:.65rem .75rem;font-size:1.1rem;font-family:inherit;
-  background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:var(--r)}
-input[type=text]:focus{outline:none;border-color:var(--mine)}
+.glow{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;opacity:.16}
+.glow.g1{width:34rem;height:34rem;background:var(--mine);top:-12rem;left:-10rem}
+.glow.g2{width:30rem;height:30rem;background:var(--theirs);bottom:-12rem;right:-9rem;opacity:.12}
+.card{width:min(520px,100%);position:relative}
+.brand{display:flex;align-items:center;gap:.9rem;margin-bottom:1.2rem}
+.mark{width:2.9rem;height:2.1rem;flex:0 0 auto}
+.card h1{font-size:1.9rem;font-weight:800;line-height:1.05;letter-spacing:-.025em}
+.tag{color:var(--muted);font-size:.95rem;margin-top:.15rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:1.3rem}
+label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:.4rem}
+input[type=text]{width:100%;padding:.7rem .8rem;font-size:1.05rem;font-family:inherit;
+  background:var(--base);border:1px solid var(--line);color:var(--text);border-radius:var(--r)}
+input[type=text]::placeholder{color:var(--dim)}
+input[type=text]:focus{outline:none;border-color:var(--mine);box-shadow:0 0 0 3px rgba(0,206,184,.16)}
 .btn{background:var(--mine);color:#062018;font-weight:700;font-size:1rem;
-  padding:.6rem 1.3rem;border-radius:var(--r)}
+  padding:.6rem 1.25rem;border-radius:var(--r)}
+.btn:hover{filter:brightness(1.08)}
+.btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
 .btn:disabled{opacity:.45;cursor:default}
-.btn.ghost{background:var(--card);color:var(--muted)}
-.row-btns{display:flex;gap:.6rem;align-items:center;margin-top:1.1rem;flex-wrap:wrap}
-.lgs{margin-top:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-height:42vh;overflow:auto}
-.lgs label{display:flex;gap:.7rem;align-items:center;padding:.6rem .7rem;background:var(--card);
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.btn.ghost:hover{color:var(--text);filter:none}
+.row-btns{display:flex;gap:.6rem;align-items:center;margin-top:1rem;flex-wrap:wrap}
+.lgs{margin-top:1.1rem;display:flex;flex-direction:column;gap:.35rem;max-height:40vh;overflow:auto}
+.lgs label{display:flex;gap:.7rem;align-items:center;padding:.65rem .75rem;background:var(--card);
   border:1px solid transparent;border-radius:var(--r);margin:0;color:var(--text);
-  font-size:1.05rem;cursor:pointer}
+  font-size:1.02rem;cursor:pointer;transition:border-color .15s}
 .lgs label:hover{border-color:var(--line)}
-.lgs input{accent-color:var(--mine);width:1.1rem;height:1.1rem}
-.lgs .meta{margin-left:auto;font-size:.85rem;color:var(--dim);display:block}
-.msg{margin-top:1rem;color:var(--theirs);font-size:1rem;min-height:1.4em;line-height:1.5}
-details{margin-top:1.4rem;border-top:1px solid var(--line);padding-top:1rem}
-summary{cursor:pointer;color:var(--mine);font-size:1rem}
-summary:focus-visible{outline:2px solid var(--mine);outline-offset:3px}
+.lgs label:has(input:checked){border-color:var(--mine);background:var(--card-2)}
+.lgs input{accent-color:var(--mine);width:1.1rem;height:1.1rem;flex:0 0 auto}
+.lgs .meta{margin-left:auto;font-size:.82rem;color:var(--dim);display:block;white-space:nowrap}
+.msg{margin-top:.9rem;color:var(--theirs);font-size:.98rem;min-height:1.3em;line-height:1.5}
+details{margin-top:1.2rem;border-top:1px solid var(--line);padding-top:.9rem}
+summary{cursor:pointer;color:var(--mine);font-size:.95rem;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:'+ ';font-weight:700}
+details[open] summary::before{content:'\2212 '}
+summary:focus-visible{outline:2px solid var(--mine);outline-offset:3px;border-radius:4px}
 details em{font-style:normal;color:var(--mine)}
-.hint{margin-top:1.5rem;color:var(--dim);font-size:.92rem;line-height:1.6}
-kbd{background:var(--card);padding:.05em .4em;border-radius:5px;font-family:inherit}
+details b{font-weight:600;color:var(--muted)}
+.hint{margin-top:.8rem;color:var(--dim);font-size:.9rem;line-height:1.6}
+.foot{display:flex;flex-wrap:wrap;gap:.4rem 1.1rem;margin-top:1.1rem;padding-left:.2rem}
+kbd{background:var(--card);border:1px solid var(--line);padding:.05em .45em;border-radius:5px;
+  font-family:inherit;font-size:.9em;color:var(--muted)}
 
 @media (max-width:900px){
   .board{grid-template-columns:1fr;overflow:auto}
@@ -215,38 +254,56 @@ kbd{background:var(--card);padding:.05em .4em;border-radius:5px;font-family:inhe
 </div>
 
 <div class="setup" id="setup">
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
   <div class="card">
-    <h1>Two leagues.<br><em>One screen.</em></h1>
-    <p class="lede">Live starter-by-starter scoring from Sleeper, built to be read from across the room.</p>
-
-    <label for="user">Sleeper username</label>
-    <input type="text" id="user" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="e.g. jsmith22">
-    <div class="row-btns">
-      <button class="btn" id="find">Find my leagues</button>
-      <button class="btn ghost" id="back" hidden>Back to scoreboard</button>
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 44 32" aria-hidden="true">
+        <rect x="1" y="1" width="19" height="30" rx="5" fill="none" stroke="#00CEB8" stroke-width="2"/>
+        <rect x="24" y="1" width="19" height="30" rx="5" fill="none" stroke="#FF3E7F" stroke-width="2"/>
+        <rect x="5.5" y="7" width="10" height="2.6" rx="1.3" fill="#00CEB8"/>
+        <rect x="5.5" y="13" width="7" height="2.6" rx="1.3" fill="#00CEB8" opacity=".55"/>
+        <rect x="28.5" y="7" width="10" height="2.6" rx="1.3" fill="#FF3E7F"/>
+        <rect x="28.5" y="13" width="7" height="2.6" rx="1.3" fill="#FF3E7F" opacity=".55"/>
+      </svg>
+      <div>
+        <h1>Doubleheader</h1>
+        <p class="tag">Two Sleeper leagues, one screen</p>
+      </div>
     </div>
 
-    <div class="lgs" id="lgs"></div>
-    <div class="row-btns" id="startRow" hidden>
-      <button class="btn" id="start">Show scoreboard</button>
+    <div class="panel">
+      <label for="user">Sleeper username</label>
+      <input type="text" id="user" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="the handle you log in with">
+      <div class="row-btns">
+        <button class="btn" id="find">Find my leagues</button>
+        <button class="btn ghost" id="back" hidden>Back to scoreboard</button>
+      </div>
+
+      <div class="lgs" id="lgs"></div>
+      <div class="row-btns" id="startRow" hidden>
+        <button class="btn" id="start">Show scoreboard</button>
+      </div>
+      <div class="msg" id="msg"></div>
+
+      <details id="manual">
+        <summary>Username not working? Enter league IDs instead</summary>
+        <p class="hint">
+          Open a league on sleeper.com. The address ends in
+          <b>/leagues/<em>1234567890123456789</em>/team</b> &mdash; that long number is the ID.
+        </p>
+        <label for="ids">League IDs, separated by a comma</label>
+        <input type="text" id="ids" autocomplete="off" spellcheck="false" placeholder="1234567890123456789, 9876543210987654321">
+        <div class="row-btns"><button class="btn" id="useIds">Load these leagues</button></div>
+        <div class="lgs" id="whoami"></div>
+      </details>
     </div>
-    <div class="msg" id="msg"></div>
 
-    <details id="manual">
-      <summary>Username not working? Enter league IDs instead</summary>
-      <p class="hint" style="margin-top:.6rem">
-        Open a league in Sleeper on the web. The address looks like
-        <b>sleeper.com/leagues/<em>1234567890123456789</em>/team</b> — that long number is the ID.
-      </p>
-      <label for="ids" style="margin-top:.8rem">League IDs, separated by a comma</label>
-      <input type="text" id="ids" autocomplete="off" spellcheck="false" placeholder="1234567890123456789, 9876543210987654321">
-      <div class="row-btns"><button class="btn" id="useIds">Load these leagues</button></div>
-      <div class="lgs" id="whoami"></div>
-    </details>
-
-    <p class="hint">
-      Pick up to two leagues. <kbd>F</kbd> fullscreen · <kbd>R</kbd> refresh now · scores update every 30 seconds.<br>
-      Your picks stay in this browser and in the page address, so you can bookmark it and it opens straight to the board.
+    <p class="hint foot">
+      <span><kbd>F</kbd> fullscreen</span>
+      <span><kbd>R</kbd> refresh</span>
+      <span><kbd>+</kbd> <kbd>&minus;</kbd> size</span>
+      <span>updates every 30s</span>
     </p>
   </div>
 </div>
@@ -269,6 +326,8 @@ const j=async u=>{
 const fx=n=>(Math.round((Number(n)||0)*100)/100).toFixed(2);
 
 let CFG={user:'',uid:'',leagues:[]};
+let OPEN={},PREV={};
+try{OPEN=JSON.parse(localStorage.getItem('sleeperopen')||'{}');}catch(e){OPEN={};}
 let NFL=null, PLAYERS=null, GAMES={}, STATIC={}, TIMER=null, LAST=0, PROJ=null;
 
 /* ---------------- projections ---------------- */
@@ -424,7 +483,7 @@ function teamOf(S,rosterId){
 }
 
 /* ---------------- render ---------------- */
-function playerCell(id,pts,right,scoring){
+function playerCell(id,pts,right,scoring,lid){
   const c=el('div','p'+(right?' r':''));
   const p=id&&id!=='0'?PLAYERS[id]:null;
   if(!p){
@@ -454,6 +513,7 @@ function playerCell(id,pts,right,scoring){
   if(g&&g.state==='post')c.classList.add('done');
   c.appendChild(img);c.appendChild(w);
   const box=el('div','ptsbox');
+  flag(c,`${lid}|${id}`,pts);
   const pr=projPts(id,scoring);
   box.appendChild(el('div','pts num',(g&&g.state==='pre')?'—':fx(pts)));
   if(pr!=null){
@@ -467,6 +527,15 @@ function playerCell(id,pts,right,scoring){
   c.appendChild(box);
   return c;
 }
+/* mark an element when its number moved since the last refresh */
+function flag(node,key,val){
+  const v=Math.round(Number(val||0)*100)/100;
+  const was=PREV[key];
+  PREV[key]=v;
+  if(was===undefined||was===v)return;
+  node.classList.add('bump',v>was?'up':'down');
+}
+
 /* projected final for one lineup, plus the spread of what's left */
 function outlook(m,scoring){
   let final=0,varsum=0,left=0;
@@ -510,7 +579,9 @@ function renderLeague(col,S,mine,opp,myRid){
     if(t.handle)tm.appendChild(el('div','handle',t.handle));
     const nr=el('div','nmrow');
     nr.appendChild(el('div','nm',t.name));
-    nr.appendChild(el('div','tot num',fx(total(m))));
+    const tot=el('div','tot num',fx(total(m)));
+    if(m)flag(tot,`${S.lg.league_id}|team|${m.roster_id}`,total(m));
+    nr.appendChild(tot);
     tm.appendChild(nr);
     if(win!=null){
       const bar=el('div','wbar');
@@ -568,14 +639,14 @@ function renderLeague(col,S,mine,opp,myRid){
     const ap=(mine.starters_points&&mine.starters_points[i])??0;
     const bp=opp?((opp.starters_points&&opp.starters_points[i])??0):0;
     if(ap>bp)r.classList.add('win-l');else if(bp>ap)r.classList.add('win-r');
-    const cellL=playerCell(mine.starters&&mine.starters[i],ap,false,scoring);
+    const cellL=playerCell(mine.starters&&mine.starters[i],ap,false,scoring,S.lg.league_id);
     r.appendChild(cellL);
     const lbl=(slots[i]||'FLEX').replace('SUPER_FLEX','SFLEX').replace('WRRB_FLEX','FLEX').replace('REC_FLEX','FLEX').replace('IDP_FLEX','IDP');
     const sc=el('div','slot pos-'+(['QB','RB','WR','TE','K','DEF','FLEX','SFLEX'].includes(lbl)?lbl:'FLEX'));
     sc.appendChild(el('span',null,lbl));
     r.appendChild(sc);
     let cellR=null;
-    if(opp){cellR=playerCell(opp.starters&&opp.starters[i],bp,true,scoring);r.appendChild(cellR);}
+    if(opp){cellR=playerCell(opp.starters&&opp.starters[i],bp,true,scoring,S.lg.league_id);r.appendChild(cellR);}
     else r.appendChild(el('div','p r'));
     if(cellL.classList.contains('live')||(cellR&&cellR.classList.contains('live')))r.classList.add('hot');
     rows.appendChild(r);
@@ -592,9 +663,27 @@ function renderStrip(col,S,all,myRid){
   });
   const keys=Object.keys(groups);
   if(!keys.length)return;
-  const s=el('div','strip');
-  s.appendChild(el('h4','','Around the league'));
+  const lid=S.lg.league_id;
+  const open=!!OPEN[lid];
+  const s=el('div','strip'+(open?' open':''));
+
+  const btn=document.createElement('button');
+  btn.className='strip-head';
+  btn.setAttribute('aria-expanded',open?'true':'false');
+  btn.appendChild(el('span',null,`Around the league (${keys.length})`));
+  btn.appendChild(el('span','chev','\u2304'));
+  s.appendChild(btn);
+
   const g2=el('div','g2');
+  g2.hidden=!open;
+  btn.onclick=()=>{
+    OPEN[lid]=!OPEN[lid];
+    try{localStorage.setItem('sleeperopen',JSON.stringify(OPEN));}catch(e){}
+    g2.hidden=!OPEN[lid];
+    s.classList.toggle('open',!!OPEN[lid]);
+    btn.setAttribute('aria-expanded',OPEN[lid]?'true':'false');
+    fit(col);
+  };
   keys.forEach(k=>{
     const [a,b]=groups[k];
     if(!a)return;
@@ -602,7 +691,7 @@ function renderStrip(col,S,all,myRid){
     const row=el('div','mu'+((a.roster_id===myRid||(b&&b.roster_id===myRid))?' me':''));
     row.appendChild(el('span',null,ta.name));
     row.appendChild(el('b',null,fx(a.custom_points??a.points??0)));
-    row.appendChild(el('b',null,b?fx(b.custom_points??b.points??0):'—'));
+    row.appendChild(el('b',null,b?fx(b.custom_points??b.points??0):'\u2014'));
     row.appendChild(el('span',null,tb?tb.name:'Bye'));
     g2.appendChild(row);
   });
@@ -637,7 +726,9 @@ document.addEventListener('fullscreenchange',fitAll);
 /* ---------------- refresh loop ---------------- */
 async function refresh(){
   try{
+    const prevWk=NFL&&(NFL.display_week||NFL.week);
     NFL=await j(SL+'/state/nfl');
+    if(prevWk&&prevWk!==(NFL.display_week||NFL.week))PREV={};
     $('#wk').textContent=`Week ${NFL.display_week||NFL.week} · ${NFL.season}`;
     await Promise.all([loadGames(),loadProj()]);
     const board=$('#board');
