@@ -316,9 +316,10 @@ const ALIAS={WAS:'WSH',JAX:'JAX',LA:'LAR',OAK:'LV',SD:'LAC',STL:'LAR'};
 
 const $=s=>document.querySelector(s);
 const el=(t,c,x)=>{const n=document.createElement(t);if(c)n.className=c;if(x!=null)n.textContent=x;return n;};
-const j=async u=>{
+const j=async(u,bust)=>{
   let r;
-  try{r=await fetch(u);}
+  const url=bust?u+(u.includes('?')?'&':'?')+'_='+Date.now():u;
+  try{r=await fetch(url,bust?{cache:'no-store'}:undefined);}
   catch(e){const err=new Error('blocked');err.blocked=true;throw err;}
   if(!r.ok){const err=new Error('http '+r.status);err.status=r.status;throw err;}
   return r.json();
@@ -342,7 +343,7 @@ async function loadProj(){
   ];
   for(const u of tries){
     try{
-      const d=await j(u);
+      const d=await j(u,true);
       const map={};
       if(Array.isArray(d)){
         d.forEach(r=>{if(r&&r.player_id&&r.stats)map[r.player_id]=r.stats;});
@@ -419,7 +420,7 @@ async function loadGames(){
   if(!NFL)return;
   const st=NFL.season_type==='post'?3:NFL.season_type==='pre'?1:2;
   try{
-    const d=await j(`${ESPN}?week=${NFL.week}&seasontype=${st}&dates=${NFL.season}`);
+    const d=await j(`${ESPN}?week=${NFL.week}&seasontype=${st}&dates=${NFL.season}`,true);
     const out={};
     for(const ev of (d.events||[])){
       const c=(ev.competitions&&ev.competitions[0])||{};
@@ -517,16 +518,24 @@ function playerCell(id,pts,right,scoring,lid){
   const pr=projPts(id,scoring);
   box.appendChild(el('div','pts num',(g&&g.state==='pre')?'—':fx(pts)));
   if(pr!=null){
-    const pe=el('div','proj num',fx(pr));
-    if(g&&g.state==='in'){
-      const expect=pr*(1-fracLeft(g));
-      pe.classList.add(Number(pts)>=expect?'up':'down');
-    }
+    const f=fracLeft(g);
+    const pf=(g&&g.state==='post')?Number(pts):Number(pts)+pr*f;
+    const pe=el('div','proj num',fx(pf));
+    pe.title=`Pregame projection ${fx(pr)}`;
+    if(g&&g.state!=='pre')pe.classList.add(pf>=pr?'up':'down');
     box.appendChild(pe);
   }
   c.appendChild(box);
   return c;
 }
+/* live points for starter slot i — players_points is the authoritative live map */
+function sp(m,i){
+  if(!m)return 0;
+  const id=m.starters&&m.starters[i];
+  if(id&&id!=='0'&&m.players_points&&m.players_points[id]!=null)return Number(m.players_points[id]);
+  return Number((m.starters_points&&m.starters_points[i])??0);
+}
+
 /* mark an element when its number moved since the last refresh */
 function flag(node,key,val){
   const v=Math.round(Number(val||0)*100)/100;
@@ -541,7 +550,7 @@ function outlook(m,scoring){
   let final=0,varsum=0,left=0;
   const st=(m&&m.starters)||[];
   st.forEach((id,i)=>{
-    const act=Number((m.starters_points&&m.starters_points[i])||0);
+    const act=sp(m,i);
     const p=id&&id!=='0'?PLAYERS[id]:null;
     const g=p?gameFor(p.t):null;
     const f=fracLeft(g);
@@ -560,7 +569,13 @@ function renderLeague(col,S,mine,opp,myRid){
     col.appendChild(el('div','note','No roster found for this account in this league.'));
     return;
   }
-  const total=m=>m?Number(m.custom_points??m.points??0):0;
+  const total=m=>{
+    if(!m)return 0;
+    if(m.custom_points!=null)return Number(m.custom_points);
+    const sum=(m.starters||[]).reduce((t,_,i)=>t+sp(m,i),0);
+    const rollup=Number(m.points??0);
+    return sum>rollup?sum:rollup;
+  };
   const A=teamOf(S,mine.roster_id), B=opp?teamOf(S,opp.roster_id):null;
   const scoring=S.lg.scoring_settings;
   const oA=outlook(mine,scoring), oB=opp?outlook(opp,scoring):null;
@@ -636,8 +651,8 @@ function renderLeague(col,S,mine,opp,myRid){
   const n=Math.max(slots.length,(mine.starters||[]).length);
   for(let i=0;i<n;i++){
     const r=el('div','row');
-    const ap=(mine.starters_points&&mine.starters_points[i])??0;
-    const bp=opp?((opp.starters_points&&opp.starters_points[i])??0):0;
+    const ap=sp(mine,i);
+    const bp=opp?sp(opp,i):0;
     if(ap>bp)r.classList.add('win-l');else if(bp>ap)r.classList.add('win-r');
     const cellL=playerCell(mine.starters&&mine.starters[i],ap,false,scoring,S.lg.league_id);
     r.appendChild(cellL);
@@ -727,7 +742,7 @@ document.addEventListener('fullscreenchange',fitAll);
 async function refresh(){
   try{
     const prevWk=NFL&&(NFL.display_week||NFL.week);
-    NFL=await j(SL+'/state/nfl');
+    NFL=await j(SL+'/state/nfl',true);
     if(prevWk&&prevWk!==(NFL.display_week||NFL.week))PREV={};
     $('#wk').textContent=`Week ${NFL.display_week||NFL.week} · ${NFL.season}`;
     await Promise.all([loadGames(),loadProj()]);
@@ -742,7 +757,7 @@ async function refresh(){
       try{
         const S=await loadStatic(id);
         const wk=NFL.display_week||NFL.week;
-        const all=await j(`${SL}/league/${id}/matchups/${wk}`);
+        const all=await j(`${SL}/league/${id}/matchups/${wk}`,true);
         const myR=S.rosters.find(r=>r.owner_id===CFG.uid||(r.co_owners||[]).includes(CFG.uid))||S.rosters[0];
         const mine=all.find(m=>m.roster_id===myR.roster_id);
         const opp=mine?all.find(m=>m.matchup_id!=null&&m.matchup_id===mine.matchup_id&&m.roster_id!==mine.roster_id):null;
@@ -894,7 +909,7 @@ async function boot(){
   board.innerHTML='';
   await refresh();
   clearInterval(TIMER);
-  TIMER=setInterval(refresh,30000);
+  TIMER=setInterval(refresh,20000);
 }
 
 /* ---------------- controls ---------------- */

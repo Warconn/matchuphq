@@ -6,7 +6,7 @@ A full-screen fantasy football matchup board that puts two Sleeper leagues side 
 
 Per league: your matchup with live scores, every starter with their projection, the NFL game clock for each player, projected final totals, win probability, and a strip of every other matchup in the league. Players currently on the field grow larger and get a teal outline.
 
-Scores refresh every 30 seconds. Starter rows scale automatically to fill the screen height.
+Scores refresh every 20 seconds. Starter rows scale automatically to fill the screen height.
 
 ## Deploying to GitHub Pages
 
@@ -44,7 +44,7 @@ The cursor hides after four seconds of no movement.
 - **Sleeper API** (`api.sleeper.app`) — leagues, rosters, matchups, live scoring, and projections. Projections come from an undocumented endpoint and are converted using each league's own `scoring_settings`, so custom formats read correctly. If that endpoint ever changes, projections and win probability disappear and live scoring keeps working.
 - **ESPN scoreboard** (`site.api.espn.com`) — NFL game state and clock, used to mark who is currently playing and to weight projected finals by time remaining. Optional; the board works without it.
 
-Each visitor downloads Sleeper's ~5 MB player list once per day and caches it in their browser. Everything else is a few small requests every 30 seconds.
+Each visitor downloads Sleeper's ~5 MB player list once per day and caches it in their browser. Everything else is a few small requests every 20 seconds.
 
 Win probability is estimated locally with a normal approximation over remaining projected output. It will land near Sleeper's number but is not the same calculation.
 
