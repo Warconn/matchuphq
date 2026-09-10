@@ -55,6 +55,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .stat button:focus-visible{outline:2px solid var(--mine);outline-offset:2px}
 #upd{margin-right:.4rem}
 #zpct{min-width:3.4ch;text-align:center;color:var(--muted)}
+#upd.beat{animation:beat 1.1s ease-out}
+@keyframes beat{0%{color:var(--mine)}100%{color:var(--dim)}}
 
 .board{flex:1 1 auto;display:grid;gap:0;min-height:0;grid-template-columns:1fr 1fr}
 .board.solo{grid-template-columns:1fr}
@@ -303,12 +305,15 @@ kbd{background:var(--card);border:1px solid var(--line);padding:.05em .45em;bord
       <span><kbd>F</kbd> fullscreen</span>
       <span><kbd>R</kbd> refresh</span>
       <span><kbd>+</kbd> <kbd>&minus;</kbd> size</span>
-      <span>updates every 30s</span>
+      <span>updates every 20s</span>
+      <span id="build"></span>
     </p>
   </div>
 </div>
 
 <script>
+const BUILD='2026-09-09.4';
+console.log('Matchup HQ build '+BUILD);
 const SL='https://api.sleeper.app/v1';
 const ESPN='https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
 const AV=a=>a?`https://sleepercdn.com/avatars/thumbs/${a}`:'';
@@ -327,7 +332,7 @@ const j=async(u,bust)=>{
 const fx=n=>(Math.round((Number(n)||0)*100)/100).toFixed(2);
 
 let CFG={user:'',uid:'',leagues:[]};
-let OPEN={},PREV={};
+let OPEN={},PREV={},LASTCHANGE=0;
 try{OPEN=JSON.parse(localStorage.getItem('sleeperopen')||'{}');}catch(e){OPEN={};}
 let NFL=null, PLAYERS=null, GAMES={}, STATIC={}, TIMER=null, LAST=0, PROJ=null;
 
@@ -542,6 +547,7 @@ function flag(node,key,val){
   const was=PREV[key];
   PREV[key]=v;
   if(was===undefined||was===v)return;
+  LASTCHANGE=Date.now();
   node.classList.add('bump',v>was?'up':'down');
 }
 
@@ -771,19 +777,27 @@ async function refresh(){
     }));
     fitAll();
     LAST=Date.now();
-    $('#upd').textContent='just now';
+    const u=$('#upd');
+    u.classList.remove('beat');void u.offsetWidth;u.classList.add('beat');
   }catch(e){
     $('#upd').textContent='Sleeper not responding — retrying';
   }
 }
 
+const ago=ms=>{
+  const s=Math.round(ms/1000);
+  if(s<60)return s+'s';
+  if(s<3600)return Math.round(s/60)+'m';
+  return Math.round(s/3600)+'h';
+};
 function tick(){
   const d=new Date();
   $('#clock').textContent=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
-  if(LAST){
-    const s=Math.round((Date.now()-LAST)/1000);
-    $('#upd').textContent=s<5?'just now':`updated ${s}s ago`;
-  }
+  if(!LAST)return;
+  const u=$('#upd');
+  u.textContent='checked '+ago(Date.now()-LAST)+' ago'+
+    (LASTCHANGE?' \u00b7 last change '+ago(Date.now()-LASTCHANGE)+' ago':' \u00b7 no changes yet');
+  u.title='Matchup HQ build '+BUILD;
 }
 
 /* ---------------- setup screen ---------------- */
@@ -970,6 +984,8 @@ document.addEventListener('mousemove',()=>{
   idle=setTimeout(()=>document.body.classList.add('idle'),4000);
 });
 
+const bd=document.getElementById('build');
+if(bd)bd.textContent='build '+BUILD;
 setInterval(tick,1000);tick();
 
 /* ---------------- go ---------------- */
