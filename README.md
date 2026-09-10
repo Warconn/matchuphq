@@ -1,4 +1,4 @@
-# Two-League Sleeper Scoreboard
+# Matchup HQ
 
 A full-screen fantasy football matchup board that puts two Sleeper leagues side by side, built to be read from across a room. One HTML file, no server, no API keys, no build step.
 
