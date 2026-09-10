@@ -312,7 +312,7 @@ kbd{background:var(--card);border:1px solid var(--line);padding:.05em .45em;bord
 </div>
 
 <script>
-const BUILD='2026-09-09.4';
+const BUILD='2026-09-10.1';
 console.log('Matchup HQ build '+BUILD);
 const SL='https://api.sleeper.app/v1';
 const ESPN='https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard';
@@ -922,6 +922,7 @@ async function boot(){
   }
   board.innerHTML='';
   keepAwake();
+  keepAwakeVideo();
   await refresh();
   clearInterval(TIMER);
   TIMER=setInterval(refresh,20000);
@@ -963,7 +964,11 @@ document.addEventListener('keydown',e=>{
   if(e.key==='-')setScale(scale-.05);
 });
 
-/* hold the screen on — TV boxes blank a page that never gets input */
+/* hold the screen on — TV boxes blank a page that never gets input.
+   Wake Lock alone doesn't stop Fire TV's own screensaver, which kicks in
+   from remote-control idle time regardless of the page's power state —
+   it backs off only while something is actively playing video. A silent
+   canvas-fed <video> gives it that signal without any media file. */
 let WL=null;
 async function keepAwake(){
   try{
@@ -973,9 +978,31 @@ async function keepAwake(){
     }
   }catch(e){}
 }
+let AWAKE_VIDEO=null;
+function keepAwakeVideo(){
+  try{
+    if(AWAKE_VIDEO)return;
+    const canvas=document.createElement('canvas');
+    canvas.width=2;canvas.height=2;
+    canvas.getContext('2d').fillRect(0,0,2,2);
+    const stream=canvas.captureStream(1);
+    const v=document.createElement('video');
+    v.muted=true;v.loop=true;v.playsInline=true;v.autoplay=true;
+    v.setAttribute('aria-hidden','true');
+    v.style.cssText='position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;';
+    v.srcObject=stream;
+    document.body.appendChild(v);
+    v.play().catch(()=>{});
+    AWAKE_VIDEO=v;
+  }catch(e){}
+}
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible'){keepAwake();refresh();}
+  if(document.visibilityState==='visible'){keepAwake();keepAwakeVideo();refresh();}
 });
+setInterval(()=>{
+  keepAwake();
+  if(AWAKE_VIDEO&&AWAKE_VIDEO.paused)AWAKE_VIDEO.play().catch(()=>{});
+},30000);
 
 let idle;
 document.addEventListener('mousemove',()=>{
